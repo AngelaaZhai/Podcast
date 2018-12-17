@@ -14,7 +14,9 @@ library(ggraph)
 library(igraph)
 
 ## Read dataset into R and clean
-podcasts <- read_csv("podcasts.csv")
+podcasts1 <- read_csv("podcasts1.csv")
+podcasts2 <- read_csv("podcasts2.csv")
+podcasts <- rbind(podcasts1, podcasts2)
 
 podcasts <- podcasts %>%
   mutate(categories_num = str_count(categories, pattern="\\|")+1)
