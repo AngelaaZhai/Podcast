@@ -14,8 +14,14 @@ library(igraph)
 
 ##--- DATA PREPARATION
 ## Read dataset into R and clean
-episodes <- read_csv("episodes.csv")
-podcasts <- read_csv("podcasts.csv")
+episodes1 <- read_csv("episodes1.csv")
+episodes2 <- read_csv("episodes2.csv")
+episodes3 <- read_csv("episodes3.csv")
+episodes <- rbind(episodes1, episodes2, episodes3)
+
+podcasts1 <- read_csv("podcasts1.csv")
+podcasts2 <- read_csv("podcasts2.csv")
+podcasts <- rbind(podcasts1, podcasts2)
 
 podcasts <- podcasts %>%
   mutate(categories_num = str_count(categories, pattern="\\|")+1)
