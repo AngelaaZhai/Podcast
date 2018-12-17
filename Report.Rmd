@@ -1,0 +1,246 @@
+---
+title: "Podcasts"
+author: "Angela Zhai"
+date: "12/14/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyverse", "wordcloud", "dplyr", "stringr", "tidytext", "RColorBrewer", "benford.analysis", "lubridate", "data.table", "ggraph", "igraph")
+```
+
+```{r echo=FALSE, out.width = '80%', fig.align='center'}
+knitr::include_graphics("podcasts header.jpg")
+```
+
+
+#I. Data Source
+
+The data comes from Listen Notes (https://www.listennotes.com/), which is a podcast search engine. This dataset includes the meta data of (almost) all podcast episodes that were published in December 2017.
+
+Data _podcasts.csv_ contains 121175 diffrent podcasts' information, such as title, language, categories, and description.
+
+Data _episodes.csv_ contains 881046 different episodes published in December 2017. The information for those episodes are the audio length, publish date, and episode content description.
+
+
+```{r echo=FALSE, error=FALSE, message=FALSE}
+## Read dataset into R and clean
+episodes <- read_csv("episodes.csv")
+podcasts <- read_csv("podcasts.csv")
+
+podcasts <- podcasts %>%
+  mutate(categories_num = str_count(categories, pattern="\\|")+1)
+
+## English podcasts
+podcasts_en <- podcasts %>%
+  filter(language=="English")
+## get 99316 English podcasts
+
+## seperate categories
+podcasts_cat <- podcasts_en %>%
+  mutate(categories = strsplit(categories, "\\|")) %>% 
+  unnest(categories) %>%
+  mutate(categories = trimws(categories)) 
+
+episodes_en <- episodes %>%
+  inner_join(select(podcasts_en, uuid, categories), by=c("podcast_uuid"="uuid")) 
+  
+## Some audio length less or equal to 0, and some are longer than A DAY
+episodes_length <- episodes_en %>%
+  filter(audio_length>0) %>%
+  mutate(length_min = audio_length/60, length_h = audio_length/3600,
+         pub_time = as.ITime(pub_date), pub_date = as.IDate(pub_date), 
+         pub_h = substring(as.character(pub_time), 1, 2)) %>%
+  filter(length_min<1440)
+## 656298 English episodes
+
+## Separate by categories
+episodes_cat <- episodes %>%
+  inner_join(select(podcasts_cat, uuid, language, categories), by=c("podcast_uuid"="uuid"))
+```
+
+#II. Benford's Law Test
+
+Following is the Benford's Law test for audio length in minutes of episodes.
+```{r echo=FALSE, fig.align="center"}
+bfd.cp <- benford(episodes_length$length_min)
+plot(bfd.cp)
+```
+The original data (audio length in minutes) is in blue and the expected frequency according to Benford’s law is in red.
+
+Benford’s analysis of the first digits indicates the data not follows Benford’s Law. The mean value of audio length is 39 minutes, and most episodes' length is between 25 to 50 minutes. Therefore, frequency of 10 minutes to 20 minutes is lower than Benford distribution expected frequency, and frequency of 25 minutes to 50 minutes is higher than Benford distribution expected frequency.
+
+```{r echo=FALSE}
+bfd.cp
+```
+Above result shows 5 largest discrepancies. As we can see from the plot, the highest deviation is 13.
+
+From the log mantissa of the data, we can tell that the data does not follow Benford’s Law. Because the data which follows Benfords's Law should has Mean closes to 0.5, Variance closes to 0.083, Ex. Kurtosis closes to -1.2, and Skewness closes to 0.
+
+Degree of freedom equals 89 and p-value less than 0.01, so failed to accept Benford’s law. X-squared value equals 128600 and far away from the value of degree of freedom. All in all, this dataset does not follow Benford’s law.
+
+The distortion factor is 0.556.
+
+
+#III. Exploratory Data Analysis
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+## different language podcasts
+languages_top <- podcasts %>%
+  group_by(language) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(10)
+
+language_plot <- podcasts %>%
+  inner_join(languages_top, by="language")
+
+ggplot(data=language_plot, mapping=aes(x=reorder(language, table(language)[language]))) +
+  geom_bar() +
+  coord_flip() +
+  ggtitle("Fig 1. Bar Chart for Podcasts Languages") +
+  labs(x="Languages", y="Count", subtitle="Only contains top 10 languages") +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"),
+        plot.title = element_text(size = 10), axis.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 9))
+```
+
+Fig 1 shows top 10 languages used for podcasts. Clearly, most of the podcasts are by English. Only a few used other languages.
+
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+## how many categories most podcasts have
+ggplot(data=podcasts, mapping=aes(x=categories_num)) +
+  geom_bar()  +
+  ggtitle("Fig 2. Bar Chart for Number of Categories Assigned to Podcasts") +
+  labs(x="Number of Categories", y="Count") +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"),
+        plot.title = element_text(size = 10), axis.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 9))
+```
+Each podcasts are collected under different categories, and some providers will assign a bunch of categories to their podcasts. Fig 2 tells that most podcasts are tagged only one or two categories, but some are given more than 15 categories. 
+
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+categories_top <- podcasts_cat %>%
+  group_by(categories) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(10)
+
+categories_plot <- podcasts_cat %>%
+  inner_join(categories_top, by="categories")
+
+ggplot(data=categories_plot, mapping=aes(x=reorder(categories, table(categories)[categories]))) +
+  geom_bar() +
+  coord_flip() +
+  ggtitle("Fig 3. Bar Chart for Top 10 Categories") +
+  labs(x="Categories", y="Count", subtitle="Only contains top 10 categories") +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"),
+        plot.title = element_text(size = 10), axis.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 9))
+```
+Which category has most podcasts? From Fig 3, surprisingly, Religion and Christianity are on the top. Society & Culture is a broad concept for category.
+
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+ggplot(data=subset(episodes_length, length_min<120), mapping=aes(x=length_min, y=..count..)) +
+  geom_histogram(color="black", fill="white", binwidth=5) +
+  labs(x="Audio Length in Minutes", y="Frequency", subtitle="Only focused on episodes which shorter than two hours") +
+  ggtitle("Fig 4. Histogram of Audio Length for Episodes")  +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"),
+        plot.title = element_text(size = 10), axis.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 9))
+```
+Most episodes are shorter than an hour. From Fig 4, interestingly, a lot of videos are shorter than 10 minutes or between 25 minutes to 45 minutes.
+
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+## publish date
+episodes_length$weekday <- weekdays(as.Date(episodes_length$pub_date))
+
+ggplot(data=episodes_length, mapping=aes(x=as.character(pub_date), 
+                                         fill=factor(weekday, 
+                                                     levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"), 
+                                                     labels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")))) +
+  geom_bar() +
+  coord_flip() +
+  labs(fill="Weekday", x="Publish Date", y="Count") +
+  scale_fill_brewer(palette="Paired") +
+  ggtitle("Fig 5. Bar Chart of Publish Date")  +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"),
+        plot.title = element_text(size = 10), axis.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 9))
+```
+There is a clear trend in Fig 5 that only a few episodes published on Saturday, and a lot episodes published on Monday. However, holiday is another factor which will influence whether the providers willing to publish their episodes. Like on 25 December, the number of published episodes is different from other Mondays in this month.
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+$~$
+
+
+#IV. Text Mining
+
+Fig 6. 2-grams Wordcloud of Podcasts Description (Music category)
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+## how podcasts describe their content by categories
+tidy_description <- podcasts_cat %>%
+  filter(categories=="Music") %>%
+  mutate(description = str_replace_all(description, pattern = "<(.*?)>", "")) %>%
+  unnest_tokens(bigram, description, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!is.na(word1)) %>%
+  filter(!is.na(word2)) %>%
+  count(word1, word2, sort = TRUE) %>%
+  head(60) %>%
+  mutate(word = paste(word1, word2, sep=" "))
+
+set.seed(2018)
+wordcloud(tidy_description$word, tidy_description$n, scale = c(3,0.5), colors = brewer.pal(6, "Set2"), rot.per = 0)
+```
+Fig 6 is the wordcloud for music category podcasts description. _Hip Hop_ shows a lot. Also there could be many podcasts are talking about electronic music and house music. Most of them are weekly updated and their content is about pop culture.
+
+$~$
+
+Fig 7. Words Network of Podcasts Description (Music category)
+```{r echo=FALSE, fig.align="center", out.width = '80%'}
+bigram_graph <- tidy_description %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+set.seed(2018)
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+```
+
+
