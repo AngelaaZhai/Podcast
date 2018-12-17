@@ -26,8 +26,14 @@ Data _episodes.csv_ contains 881046 different episodes published in December 201
 
 ```{r echo=FALSE, error=FALSE, message=FALSE}
 ## Read dataset into R and clean
-episodes <- read_csv("episodes.csv")
-podcasts <- read_csv("podcasts.csv")
+episodes1 <- read_csv("episodes1.csv")
+episodes2 <- read_csv("episodes2.csv")
+episodes3 <- read_csv("episodes3.csv")
+episodes <- rbind(episodes1, episodes2, episodes3)
+
+podcasts1 <- read_csv("podcasts1.csv")
+podcasts2 <- read_csv("podcasts2.csv")
+podcasts <- rbind(podcasts1, podcasts2)
 
 podcasts <- podcasts %>%
   mutate(categories_num = str_count(categories, pattern="\\|")+1)
@@ -62,21 +68,21 @@ episodes_cat <- episodes %>%
 
 #II. Benford's Law Test
 
-Following is the Benford's Law test for audio length in minutes of episodes.
+Following is the Benford's Law test for episodes' audio length in minutes.
 ```{r echo=FALSE, fig.align="center"}
 bfd.cp <- benford(episodes_length$length_min)
 plot(bfd.cp)
 ```
 The original data (audio length in minutes) is in blue and the expected frequency according to Benford’s law is in red.
 
-Benford’s analysis of the first digits indicates the data not follows Benford’s Law. The mean value of audio length is 39 minutes, and most episodes' length is between 25 to 50 minutes. Therefore, frequency of 10 minutes to 20 minutes is lower than Benford distribution expected frequency, and frequency of 25 minutes to 50 minutes is higher than Benford distribution expected frequency.
+Benford’s analysis of the first digits indicates the data does not follow Benford’s Law. The mean value of audio length is 39 minutes, and most episodes' length is between 25 to 50 minutes. Therefore, the frequency of 10 minutes to 20 minutes is lower than Benford distribution expected frequency, and frequency of 25 minutes to 50 minutes is higher than Benford distribution expected frequency.
 
 ```{r echo=FALSE}
 bfd.cp
 ```
 Above result shows 5 largest discrepancies. As we can see from the plot, the highest deviation is 13.
 
-From the log mantissa of the data, we can tell that the data does not follow Benford’s Law. Because the data which follows Benfords's Law should has Mean closes to 0.5, Variance closes to 0.083, Ex. Kurtosis closes to -1.2, and Skewness closes to 0.
+From the log mantissa of the data, we can tell that the data does not follow Benford’s Law. Because the data which follows Benford's Law should have Mean closes to 0.5, Variance closes to 0.083, Ex. Kurtosis closes to -1.2, and Skewness closes to 0.
 
 Degree of freedom equals 89 and p-value less than 0.01, so failed to accept Benford’s law. X-squared value equals 128600 and far away from the value of degree of freedom. All in all, this dataset does not follow Benford’s law.
 
@@ -105,7 +111,7 @@ ggplot(data=language_plot, mapping=aes(x=reorder(language, table(language)[langu
         plot.subtitle = element_text(size = 9))
 ```
 
-Fig 1 shows top 10 languages used for podcasts. Clearly, most of the podcasts are by English. Only a few used other languages.
+Fig 1 shows the top 10 languages used for podcasts. Most of the podcasts are by English. Only a few used other languages.
 
 ```{r echo=FALSE, fig.align="center", out.width = '80%'}
 ## how many categories most podcasts have
@@ -117,7 +123,7 @@ ggplot(data=podcasts, mapping=aes(x=categories_num)) +
         plot.title = element_text(size = 10), axis.title = element_text(size = 10),
         plot.subtitle = element_text(size = 9))
 ```
-Each podcasts are collected under different categories, and some providers will assign a bunch of categories to their podcasts. Fig 2 tells that most podcasts are tagged only one or two categories, but some are given more than 15 categories. 
+Each podcast is collected under different categories, and some providers will assign a bunch of categories to their podcasts. Fig 2 tells that most podcasts are tagged only one or two categories, but some are given more than 15 categories. 
 
 ```{r echo=FALSE, fig.align="center", out.width = '80%'}
 categories_top <- podcasts_cat %>%
@@ -168,7 +174,7 @@ ggplot(data=episodes_length, mapping=aes(x=as.character(pub_date),
         plot.title = element_text(size = 10), axis.title = element_text(size = 10),
         plot.subtitle = element_text(size = 9))
 ```
-There is a clear trend in Fig 5 that only a few episodes published on Saturday, and a lot episodes published on Monday. However, holiday is another factor which will influence whether the providers willing to publish their episodes. Like on 25 December, the number of published episodes is different from other Mondays in this month.
+There is a clear trend in Fig 5 that only a few episodes published on Saturday, and a lot of episodes released on Monday. However, holiday is another factor which will influence whether the providers willing to publish their episodes. Like on 25 December, the number of published episodes is different from other Mondays in this month.
 
 $~$
 
@@ -224,7 +230,7 @@ tidy_description <- podcasts_cat %>%
 set.seed(2018)
 wordcloud(tidy_description$word, tidy_description$n, scale = c(3,0.5), colors = brewer.pal(6, "Set2"), rot.per = 0)
 ```
-Fig 6 is the wordcloud for music category podcasts description. _Hip Hop_ shows a lot. Also there could be many podcasts are talking about electronic music and house music. Most of them are weekly updated and their content is about pop culture.
+Fig 6 is the wordcloud for music category podcasts description. _Hip Hop_ shows a lot. Also, there could be many podcasts are talking about electronic music and house music. Most of them are weekly updated, and their content is about pop culture.
 
 $~$
 
