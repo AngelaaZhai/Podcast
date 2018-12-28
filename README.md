@@ -6,6 +6,8 @@
 
 Scraped from Listen Notes (https://www.listennotes.com/), which is a podcast search engine. Datasets include the meta data of (almost) all podcast episodes that were published in December 2017.
 
+Dataset here is a little bit different from the one on Kaggle since Github storage limit. Split one into couple datasets, and remove some columns which I didn't use.
+
 
 
 ## 2. Data Manipulation
@@ -39,4 +41,30 @@ Seems like podcast is a popular way for religious purpose.
 
 ## 4. Episodes EDA
 
-* __
+Do you have patience to catch full episode which lasts more than two hours? Probably not.
+
+* __Then usually how long will an episode last?__
+
+<img width="723" alt="fig_4" src="https://user-images.githubusercontent.com/42655633/50502234-a2a36700-0a2b-11e9-8b77-29f79f2decf4.png">
+
+Only a few episodes will last more than an hour. Most episodes contains ten minutes content, or between 25 to 45 minutes.
+
+* __What about publish date? Any trend?__
+
+<img width="710" alt="fig_5" src="https://user-images.githubusercontent.com/42655633/50502238-ac2ccf00-0a2b-11e9-88a4-7cea9525f9b1.png">
+
+Mondays are always the peak, and Saturdays...the opposite.
+
+## 5. Text Mining
+
+* __How publishers describe their podcasts?__
+
+Here is a bigram wordcloud for podcasts under music category.
+
+<img width="475" alt="fig_6" src="https://user-images.githubusercontent.com/42655633/50502244-b4850a00-0a2b-11e9-9d96-4b014c0ef9c3.png">
+
+__Hip Hop__ shows a lot! __Of Course!__
+
+Here is a Shiny App which could play with different category's wordcloud. Link below:
+
+[shinyio] https://angelaz.shinyapps.io/podcasts/
