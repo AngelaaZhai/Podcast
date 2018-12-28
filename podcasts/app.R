@@ -46,7 +46,7 @@ category_order <- podcasts_cat %>%
 
 
 ##--- SHINY
-ui <- dashboardPage(skin = "red",
+ui <- dashboardPage(
   dashboardHeader(title = "Podcasts"),
   dashboardSidebar(
     sidebarMenu(
@@ -65,7 +65,7 @@ ui <- dashboardPage(skin = "red",
         tabName = "dashboard",
         fluidRow(
           box(
-            title = "Introduction", status = "info", 
+            title = "Introduction",
             solidHeader = TRUE, collapsible = TRUE, width = 12,
             "This Shiny App is used to show some findings from published podcasts and episodes in December, 2017."
           )
@@ -74,10 +74,6 @@ ui <- dashboardPage(skin = "red",
           valueBox("Podcasts", 121175, icon = icon("podcast"), color = "yellow"),
           valueBox("Episodes", 881046, icon = icon("headphones"), color = "olive"),
           valueBox("Categories", 67, icon = icon("sliders"), color = "orange")
-        ),
-        fluidRow(
-            img(src="earphone.png", width = 600,
-                style="display: block; margin-left: auto; margin-right: auto;")
         )
       ),
       
@@ -159,7 +155,7 @@ server <- function(input, output) {
       inner_join(languages_top, by="language")
     
     ggplot(data=language_plot, mapping=aes(x=reorder(language, table(language)[language]))) +
-      geom_bar(aes(fill=language)) +
+      geom_bar() +
       coord_flip() +
       ggtitle("Bar Chart for Podcasts Languages") +
       labs(x="Languages", y="Count") +
@@ -180,7 +176,7 @@ server <- function(input, output) {
       inner_join(categories_top, by="categories")
     
     ggplot(data=categories_plot, mapping=aes(x=reorder(categories, table(categories)[categories]))) +
-      geom_bar(aes(fill=categories)) +
+      geom_bar() +
       coord_flip() +
       ggtitle("Bar Chart for Categories") +
       labs(x="Categories", y="Count") +

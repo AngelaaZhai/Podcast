@@ -10,10 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 pacman::p_load("tidyverse", "wordcloud", "dplyr", "stringr", "tidytext", "RColorBrewer", "benford.analysis", "lubridate", "data.table", "ggraph", "igraph")
 ```
 
-```{r echo=FALSE, out.width = '80%', fig.align='center'}
-knitr::include_graphics("podcasts header.jpg")
-```
-
 
 #I. Data Source
 
